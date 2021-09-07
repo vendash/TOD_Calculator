@@ -2,6 +2,23 @@ const debug = true;
 
 const keys = document.querySelector('.keys');
 
+const initialize = function() {
+    result = 0;
+    currInput = '0';
+    prevInput = undefined;
+    prevOp = '';
+    isLastKeyEqual = false;
+    isDisplayingResult = false;
+    setDisplay();
+}
+
+let result = 0;
+let currInput = '';
+let prevInput = '';
+let prevOp = '';
+let isLastKeyEqual = false;
+let isDisplayingResult = false;
+
 keys.addEventListener('click', (e) => {
     if (!e.target.closest('button')) return;
     const dataKey = e.target.dataset.key;
@@ -11,52 +28,53 @@ keys.addEventListener('click', (e) => {
 
     switch (dataType) {
         case 'number':
-            if (partSum === undefined || currNum === undefined) {
-                if (currNum === '0' || currNum === undefined) {
-                    currNum = dataKey;
-                } else {
-                    currNum = currNum + dataKey;
+            if (isDisplayingResult) {
+                //Currently displaying a result, new number will come
+                currInput = dataKey;
+                isDisplayingResult = false;
+                if (isLastKeyEqual) {
+                    //Number after an equal sign means new operation
+                    result = 0;
+                    prevInput = '';
+                    isLastKeyEqual = false;
+                    prevOp = '';
                 }
             } else {
-                if (isLastKeyEqual) {
-                    currNum = dataKey;
-                    partSum = undefined;
-                    prevOp = '';
+                if (currInput === '0') {
+                    currInput = dataKey;
                 } else {
-                    currNum = currNum + dataKey;
+                    currInput = currInput + dataKey;
                 }
             }
-            setDisplay(currNum);
-            isLastKeyEqual = false;
+            setDisplay();
             break;
         case 'operator':
-            if (partSum === undefined) {
-                partSum = currNum;
-                currNum = undefined;
-                prevOp = dataKey;
-                setDisplay(partSum);
-            } else {
-                if (!isLastKeyEqual) partSum = calculate(partSum, currNum, prevOp);
-                currNum = undefined;
-                prevOp = dataKey;
-                setDisplay(partSum);
+            if (!isLastKeyEqual && currInput) {
+                if (prevOp) {
+                    //There was a previous operatos, we can calc
+                    result = calculate(prevInput, currInput, prevOp);
+                    prevInput = result;
+                    displayResult();
+                } else {
+                    prevInput = currInput;
+                    currInput = '';
+                }
+
             }
+            prevOp = dataKey;
+            isLastKeyEqual = false;
             break;
         case 'equal':
             if (prevOp) {
+                result = calculate(prevInput, currInput, prevOp);
+                prevInput = result;
                 isLastKeyEqual = true;
-                partSum = calculate(partSum, currNum, prevOp);
-                setDisplay(partSum);               
+                displayResult();                
             }
             break;
         case 'percent':
-            if (currNum === undefined) {
-                partSum = partSum /100;
-                setDisplay(partSum);
-            } else {
-                currNum = currNum / 100;
-                setDisplay(currNum);
-            }
+            break;
+        case 'decimal':
             break;
         case 'clear':
             initialize();
@@ -64,7 +82,7 @@ keys.addEventListener('click', (e) => {
         default:
             return;
     }
-
+    displayVariables();
 })
 
 const calculate = function(num1, num2, op) {
@@ -76,26 +94,26 @@ const calculate = function(num1, num2, op) {
     if (op === '*') return num1 * num2;
 }
 
-const setDisplay = function(num) {
+const displayResult = function() {
     const display = document.querySelector('.display');
-    display.textContent = num;
+    display.textContent = result.toString();
+    isDisplayingResult = true;
 }
 
-
-const initialize = function() {
-    currNum = '0';
-    partSum = undefined;
-    prevOp = '';
-    isLastKeyEqual = false;
-    setDisplay(currNum);
+const setDisplay = function() {
+    const display = document.querySelector('.display');
+    display.textContent = currInput.toString();
 }
 
-let currNum = undefined;
-let partSum = undefined;
-let prevOp = '';
-let isLastKeyEqual = false;
-
+const displayVariables = function() {
+    console.log(`
+        result: ${result}
+        currInput: ${currInput},
+        prevInput: ${prevInput},
+        prevOp: ${prevOp},
+        isLastKeyEqual: ${isLastKeyEqual},
+        isDisplayingResult: ${isDisplayingResult}
+        `)
+}
 
 initialize();
-
-
